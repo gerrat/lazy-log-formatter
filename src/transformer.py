@@ -198,8 +198,8 @@ class Transformer(cst.CSTTransformer):
         try:
             return black.format_str(
                 content,
-                mode=black.FileMode(line_length=120),
-            ).strip()
+                mode=black.FileMode(),
+            )
         except black.InvalidInput as e:
             logger.debug("Error formatting code with Black: %s", e)
             return content
