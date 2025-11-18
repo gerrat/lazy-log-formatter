@@ -23,6 +23,31 @@ logger = logging.getLogger(__name__)
 LOG_CALL_PATTERN = re.compile("^[_]{,2}log", re.IGNORECASE)
 
 
+def find_pyproject_toml(start: Path) -> Path | None:
+    for parent in [start] + list(start.parents):
+        if (parent / "pyproject.toml").exists():
+            return parent
+    return None
+
+
+def load_black_config(project_root: Path) -> dict:
+    pyproject_file = project_root / "pyproject.toml"
+    if not pyproject_file.exists():
+        return {}  # fallback to defaults
+
+    import tomllib
+
+    with pyproject_file.open("rb") as f:
+        pyproject_data = tomllib.load(f)
+
+    # Extract the [tool.black] section
+    return pyproject_data.get("tool", {}).get("black", {})
+
+
+PROJECT_ROOT = find_pyproject_toml(Path(__file__).resolve())
+BLACK_CONFIG = load_black_config(PROJECT_ROOT) if PROJECT_ROOT is not None else {}
+
+
 def has_logging_import(content: str) -> bool:
     """Check if the given content contains an import statement for the logging module.
 
@@ -195,10 +220,11 @@ class Transformer(cst.CSTTransformer):
         Returns:
             str: The formatted Python source code as a string.
         """
+
         try:
             return black.format_str(
                 content,
-                mode=black.FileMode(),
+                mode=black.FileMode(**BLACK_CONFIG),
             )
         except black.InvalidInput as e:
             logger.debug("Error formatting code with Black: %s", e)
