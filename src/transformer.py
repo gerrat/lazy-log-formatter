@@ -41,7 +41,9 @@ def load_black_config(project_root: Path) -> dict:
         pyproject_data = tomllib.load(f)
 
     # Extract the [tool.black] section
-    return pyproject_data.get("tool", {}).get("black", {})
+    black_config = pyproject_data.get("tool", {}).get("black", {})
+    fixed_config = {k.replace("-", "_"): v for k, v in black_config.items()}
+    return fixed_config
 
 
 PROJECT_ROOT = find_pyproject_toml(Path(__file__).resolve())
