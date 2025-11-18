@@ -84,16 +84,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    venv_path = Path(sys.prefix).resolve()
     all_files: set[Path] = set()
     for path_str in args.paths:
         path = Path(path_str).resolve()
-        venv_path = Path(sys.prefix).resolve()
-        if path.samefile(venv_path):
+        if path == venv_path:
             continue
         if path.is_file():
             all_files.add(path)
         elif path.is_dir():
-            all_files.update(p.resolve() for p in path.rglob("*.py"))
+            all_files.update(
+                p.resolve() for p in path.rglob("*.py") if venv_path not in p.parents
+            )
         else:
             print(
                 f"Warning: '{path_str}' is not a valid file or directory and will be ignored.",
